@@ -1,0 +1,25 @@
+================================================================================
+Mixed HTML and SPIP
+================================================================================
+<div class="article">
+<h1>#TITRE</h1>
+[<p class="subtitle">(#SOUSTITRE)</p>]
+<div class="body">#TEXTE</div>
+</div>
+--------------------------------------------------------------------------------
+
+(template
+  (content)
+  (balise_shorthand
+    name: (balise_name))
+  (content)
+  (conditional_open)
+  (content)
+  (balise
+    name: (balise_name))
+  (content)
+  (conditional_close)
+  (content)
+  (balise_shorthand
+    name: (balise_name))
+  (content))

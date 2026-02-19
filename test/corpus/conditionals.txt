@@ -1,0 +1,29 @@
+================================================================================
+Conditional bracket around balise
+================================================================================
+[<p>(#SOUSTITRE)</p>]
+--------------------------------------------------------------------------------
+
+(template
+  (conditional_open)
+  (content)
+  (balise
+    name: (balise_name))
+  (content)
+  (conditional_close))
+
+================================================================================
+Conditional with filter
+================================================================================
+[(#DESCRIPTIF|sinon{Pas de description})]
+--------------------------------------------------------------------------------
+
+(template
+  (conditional_open)
+  (balise
+    name: (balise_name)
+    (filter
+      name: (filter_name)
+      (filter_params
+        value: (param_content))))
+  (conditional_close))

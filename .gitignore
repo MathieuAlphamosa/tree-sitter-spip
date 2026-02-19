@@ -1,0 +1,8 @@
+node_modules/
+.DS_Store
+package-lock.json
+build/
+*.wasm
+
+# Ad-hoc test files (corpus tests are in test/corpus/)
+test/*.html

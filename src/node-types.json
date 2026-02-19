@@ -1,0 +1,517 @@
+[
+  {
+    "type": "balise",
+    "named": true,
+    "fields": {
+      "name": {
+        "multiple": false,
+        "required": true,
+        "types": [
+          {
+            "type": "balise_name",
+            "named": true
+          }
+        ]
+      },
+      "namespace": {
+        "multiple": false,
+        "required": false,
+        "types": [
+          {
+            "type": "balise_namespace",
+            "named": true
+          }
+        ]
+      }
+    },
+    "children": {
+      "multiple": true,
+      "required": false,
+      "types": [
+        {
+          "type": "balise_params",
+          "named": true
+        },
+        {
+          "type": "filter",
+          "named": true
+        }
+      ]
+    }
+  },
+  {
+    "type": "balise_name",
+    "named": true,
+    "fields": {}
+  },
+  {
+    "type": "balise_params",
+    "named": true,
+    "fields": {
+      "value": {
+        "multiple": false,
+        "required": false,
+        "types": [
+          {
+            "type": "param_content",
+            "named": true
+          }
+        ]
+      }
+    }
+  },
+  {
+    "type": "balise_shorthand",
+    "named": true,
+    "fields": {
+      "name": {
+        "multiple": false,
+        "required": true,
+        "types": [
+          {
+            "type": "balise_name",
+            "named": true
+          }
+        ]
+      }
+    },
+    "children": {
+      "multiple": false,
+      "required": false,
+      "types": [
+        {
+          "type": "balise_params",
+          "named": true
+        }
+      ]
+    }
+  },
+  {
+    "type": "comment",
+    "named": true,
+    "fields": {}
+  },
+  {
+    "type": "conditional_close",
+    "named": true,
+    "fields": {}
+  },
+  {
+    "type": "content",
+    "named": true,
+    "fields": {}
+  },
+  {
+    "type": "criteria",
+    "named": true,
+    "fields": {
+      "value": {
+        "multiple": false,
+        "required": true,
+        "types": [
+          {
+            "type": "criteria_value",
+            "named": true
+          }
+        ]
+      }
+    }
+  },
+  {
+    "type": "criteria_value",
+    "named": true,
+    "fields": {}
+  },
+  {
+    "type": "filter",
+    "named": true,
+    "fields": {
+      "name": {
+        "multiple": false,
+        "required": true,
+        "types": [
+          {
+            "type": "filter_name",
+            "named": true
+          }
+        ]
+      }
+    },
+    "children": {
+      "multiple": false,
+      "required": false,
+      "types": [
+        {
+          "type": "filter_params",
+          "named": true
+        }
+      ]
+    }
+  },
+  {
+    "type": "filter_params",
+    "named": true,
+    "fields": {
+      "value": {
+        "multiple": false,
+        "required": false,
+        "types": [
+          {
+            "type": "param_content",
+            "named": true
+          }
+        ]
+      }
+    }
+  },
+  {
+    "type": "include_param_block",
+    "named": true,
+    "fields": {
+      "params": {
+        "multiple": false,
+        "required": true,
+        "types": [
+          {
+            "type": "include_params",
+            "named": true
+          }
+        ]
+      }
+    }
+  },
+  {
+    "type": "include_params",
+    "named": true,
+    "fields": {}
+  },
+  {
+    "type": "include_tag",
+    "named": true,
+    "fields": {},
+    "children": {
+      "multiple": true,
+      "required": true,
+      "types": [
+        {
+          "type": "include_param_block",
+          "named": true
+        }
+      ]
+    }
+  },
+  {
+    "type": "loop_alternative",
+    "named": true,
+    "fields": {
+      "name": {
+        "multiple": false,
+        "required": true,
+        "types": [
+          {
+            "type": "loop_name",
+            "named": true
+          }
+        ]
+      }
+    }
+  },
+  {
+    "type": "loop_close",
+    "named": true,
+    "fields": {
+      "name": {
+        "multiple": false,
+        "required": true,
+        "types": [
+          {
+            "type": "loop_name",
+            "named": true
+          }
+        ]
+      }
+    }
+  },
+  {
+    "type": "loop_conditional_close",
+    "named": true,
+    "fields": {
+      "name": {
+        "multiple": false,
+        "required": true,
+        "types": [
+          {
+            "type": "loop_name",
+            "named": true
+          }
+        ]
+      }
+    }
+  },
+  {
+    "type": "loop_conditional_open",
+    "named": true,
+    "fields": {
+      "name": {
+        "multiple": false,
+        "required": true,
+        "types": [
+          {
+            "type": "loop_name",
+            "named": true
+          }
+        ]
+      }
+    }
+  },
+  {
+    "type": "loop_open",
+    "named": true,
+    "fields": {
+      "name": {
+        "multiple": false,
+        "required": true,
+        "types": [
+          {
+            "type": "loop_name",
+            "named": true
+          }
+        ]
+      },
+      "type": {
+        "multiple": false,
+        "required": true,
+        "types": [
+          {
+            "type": "loop_type",
+            "named": true
+          }
+        ]
+      }
+    },
+    "children": {
+      "multiple": true,
+      "required": false,
+      "types": [
+        {
+          "type": "criteria",
+          "named": true
+        }
+      ]
+    }
+  },
+  {
+    "type": "loop_type",
+    "named": true,
+    "fields": {}
+  },
+  {
+    "type": "multi_block",
+    "named": true,
+    "fields": {},
+    "children": {
+      "multiple": true,
+      "required": false,
+      "types": [
+        {
+          "type": "lang_code",
+          "named": true
+        },
+        {
+          "type": "lang_code_brace",
+          "named": true
+        },
+        {
+          "type": "multi_text",
+          "named": true
+        }
+      ]
+    }
+  },
+  {
+    "type": "param_content",
+    "named": true,
+    "fields": {}
+  },
+  {
+    "type": "template",
+    "named": true,
+    "root": true,
+    "fields": {},
+    "children": {
+      "multiple": true,
+      "required": false,
+      "types": [
+        {
+          "type": "balise",
+          "named": true
+        },
+        {
+          "type": "balise_shorthand",
+          "named": true
+        },
+        {
+          "type": "comment",
+          "named": true
+        },
+        {
+          "type": "conditional_close",
+          "named": true
+        },
+        {
+          "type": "conditional_open",
+          "named": true
+        },
+        {
+          "type": "content",
+          "named": true
+        },
+        {
+          "type": "include_tag",
+          "named": true
+        },
+        {
+          "type": "loop_alternative",
+          "named": true
+        },
+        {
+          "type": "loop_close",
+          "named": true
+        },
+        {
+          "type": "loop_conditional_close",
+          "named": true
+        },
+        {
+          "type": "loop_conditional_open",
+          "named": true
+        },
+        {
+          "type": "loop_open",
+          "named": true
+        },
+        {
+          "type": "multi_block",
+          "named": true
+        },
+        {
+          "type": "translation",
+          "named": true
+        }
+      ]
+    }
+  },
+  {
+    "type": "translation",
+    "named": true,
+    "fields": {}
+  },
+  {
+    "type": "#",
+    "named": false
+  },
+  {
+    "type": "(",
+    "named": false
+  },
+  {
+    "type": "(#",
+    "named": false
+  },
+  {
+    "type": ")",
+    "named": false
+  },
+  {
+    "type": ":>",
+    "named": false
+  },
+  {
+    "type": "<//B_",
+    "named": false
+  },
+  {
+    "type": "</BOUCLE_",
+    "named": false
+  },
+  {
+    "type": "</B_",
+    "named": false
+  },
+  {
+    "type": "</multi>",
+    "named": false
+  },
+  {
+    "type": "<:",
+    "named": false
+  },
+  {
+    "type": "<BOUCLE_",
+    "named": false
+  },
+  {
+    "type": "<B_",
+    "named": false
+  },
+  {
+    "type": "<INCLURE",
+    "named": false
+  },
+  {
+    "type": "<multi>",
+    "named": false
+  },
+  {
+    "type": ">",
+    "named": false
+  },
+  {
+    "type": "[(#REM)",
+    "named": false
+  },
+  {
+    "type": "]",
+    "named": false
+  },
+  {
+    "type": "balise_namespace",
+    "named": true
+  },
+  {
+    "type": "conditional_open",
+    "named": true
+  },
+  {
+    "type": "filter_name",
+    "named": true
+  },
+  {
+    "type": "lang_code",
+    "named": true
+  },
+  {
+    "type": "lang_code_brace",
+    "named": true
+  },
+  {
+    "type": "loop_name",
+    "named": true
+  },
+  {
+    "type": "multi_text",
+    "named": true
+  },
+  {
+    "type": "{",
+    "named": false
+  },
+  {
+    "type": "|",
+    "named": false
+  },
+  {
+    "type": "}",
+    "named": false
+  }
+]

@@ -1,0 +1,49 @@
+================================================================================
+Simple include
+================================================================================
+<INCLURE{fond=header,env} />
+--------------------------------------------------------------------------------
+
+(template
+  (include_tag
+    (include_param_block
+      params: (include_params))))
+
+================================================================================
+Include with multiple params
+================================================================================
+<INCLURE{fond=inc/pagination,id_rubrique,env} />
+--------------------------------------------------------------------------------
+
+(template
+  (include_tag
+    (include_param_block
+      params: (include_params))))
+
+================================================================================
+Include with multiple param blocks
+================================================================================
+<INCLURE{fond=inclure/head}{home=oui} />
+--------------------------------------------------------------------------------
+
+(template
+  (include_tag
+    (include_param_block
+      params: (include_params))
+    (include_param_block
+      params: (include_params))))
+
+================================================================================
+Include with nested braces in params
+================================================================================
+<INCLURE{fond=inclure/img-moitie}{id_article}{hauteurs=#LISTE{300,360}} />
+--------------------------------------------------------------------------------
+
+(template
+  (include_tag
+    (include_param_block
+      params: (include_params))
+    (include_param_block
+      params: (include_params))
+    (include_param_block
+      params: (include_params))))

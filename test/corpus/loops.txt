@@ -1,0 +1,76 @@
+================================================================================
+Simple loop
+================================================================================
+<BOUCLE_art(ARTICLES){par date}>
+#TITRE
+</BOUCLE_art>
+--------------------------------------------------------------------------------
+
+(template
+  (loop_open
+    name: (loop_name)
+    type: (loop_type)
+    (criteria
+      value: (criteria_value)))
+  (content)
+  (balise_shorthand
+    name: (balise_name))
+  (content)
+  (loop_close
+    name: (loop_name)))
+
+================================================================================
+Loop with multiple criteria
+================================================================================
+<BOUCLE_articles(ARTICLES){id_rubrique}{par date}{inverse}{0,10}>
+</BOUCLE_articles>
+--------------------------------------------------------------------------------
+
+(template
+  (loop_open
+    name: (loop_name)
+    type: (loop_type)
+    (criteria
+      value: (criteria_value))
+    (criteria
+      value: (criteria_value))
+    (criteria
+      value: (criteria_value))
+    (criteria
+      value: (criteria_value)))
+  (content)
+  (loop_close
+    name: (loop_name)))
+
+================================================================================
+Complete loop with conditionals
+================================================================================
+<B_art>
+<BOUCLE_art(ARTICLES){par titre}>
+#TITRE
+</BOUCLE_art>
+</B_art>
+<//B_art>
+--------------------------------------------------------------------------------
+
+(template
+  (loop_conditional_open
+    name: (loop_name))
+  (content)
+  (loop_open
+    name: (loop_name)
+    type: (loop_type)
+    (criteria
+      value: (criteria_value)))
+  (content)
+  (balise_shorthand
+    name: (balise_name))
+  (content)
+  (loop_close
+    name: (loop_name))
+  (content)
+  (loop_conditional_close
+    name: (loop_name))
+  (content)
+  (loop_alternative
+    name: (loop_name)))
