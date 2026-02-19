@@ -16,9 +16,13 @@
  *   - Otherwise fall through to CONTENT_CHAR logic
  *
  * When only CONTENT_CHAR is valid:
- *   - If current char starts a SPIP construct → return false
- *   - If current char is a grammar-reserved token ({, }, |, ), *) → return false
+ *   - If current char starts a top-level SPIP construct → return false
  *   - Otherwise → consume one char, emit CONTENT_CHAR
+ *
+ * IMPORTANT: Characters like {, }, ), *, | are NOT blocked from content.
+ * They only have meaning inside SPIP rules where the parser does not ask
+ * for CONTENT_CHAR. Blocking them from content caused infinite loops when
+ * they appeared in HTML (CSS, JS, etc.).
  */
 
 #include "tree_sitter/parser.h"
@@ -61,6 +65,12 @@ static bool is_ws(int32_t c) {
 /**
  * Return true if the current position looks like the start of a SPIP
  * construct that the grammar should parse instead of content.
+ *
+ * IMPORTANT: Only block characters that start *top-level* SPIP constructs.
+ * Characters like {, }, ), * only have meaning INSIDE SPIP rules (balise,
+ * loop_open, etc.) where the parser won't ask for CONTENT_CHAR anyway.
+ * Blocking them here would cause infinite loops when they appear in HTML
+ * (CSS, JS, plain text), because no top-level grammar rule can consume them.
  */
 static bool at_spip_start(TSLexer *lexer) {
   int32_t c = lexer->lookahead;
@@ -136,19 +146,17 @@ static bool at_spip_start(TSLexer *lexer) {
       return false;
     }
 
-    case '[': {
-      lexer->mark_end(lexer);
-      lexer->advance(lexer, false);
-      if (lexer->lookahead == '(') {
-        lexer->advance(lexer, false);
-        if (lexer->lookahead == '#') {
-          lexer->advance(lexer, false);
-          if (lexer->lookahead == 'R') return true;
-        }
-      }
+    // [ always stops content: it's either a comment start [(#REM)
+    // or a conditional bracket (both are top-level grammar rules).
+    case '[':
       return true;
-    }
 
+    // These characters are grammar-reserved tokens used inside SPIP rules.
+    // They must be blocked from content so tree-sitter can match them as
+    // literal tokens in balise, loop, criteria, filter rules.
+    // At the top level, the grammar provides a `stray_char` fallback rule
+    // to consume them when they appear in HTML content (CSS, JS, etc.),
+    // preventing infinite loops.
     case ']':
     case '{':
     case '}':
@@ -157,9 +165,8 @@ static bool at_spip_start(TSLexer *lexer) {
       return true;
 
     case '|': {
-      // Only block | when followed by a filter name character.
-      // This avoids blocking | used as a visual separator in HTML (e.g. "link | link").
-      // SPIP filter names start with: a-z, A-Z, _, !, =, <, >, ?, *
+      // Block | when followed by a filter name character.
+      // At the top level, `stray_char` will catch it if no filter matches.
       lexer->mark_end(lexer);
       lexer->advance(lexer, false);
       int32_t c2 = lexer->lookahead;

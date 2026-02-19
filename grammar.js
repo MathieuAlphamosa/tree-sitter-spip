@@ -52,6 +52,11 @@ module.exports = grammar({
           $.conditional_open,
           $.conditional_close,
           $.content,
+          // Fallback: consume grammar-reserved characters that appear in
+          // HTML content (CSS, JS, etc.) outside any SPIP construct.
+          // Without this, the scanner blocks them from content but no SPIP
+          // rule matches either, causing an infinite loop.
+          $._stray_char,
         ),
       ),
 
@@ -277,5 +282,14 @@ module.exports = grammar({
     // The external scanner emits _content_char for characters that
     // are not part of any SPIP construct.
     content: ($) => prec.right(repeat1($._content_char)),
+
+    // Fallback rule: consume grammar-reserved characters (}, ), *, {, ], |)
+    // that appear in HTML content outside any SPIP construct.
+    // These characters are blocked by the external scanner (they are literal
+    // tokens in SPIP rules), so they cannot be part of `content`.
+    // This rule prevents infinite loops by giving the parser a way to
+    // consume them at the top level.
+    // Prefixed with _ to make it anonymous (hidden in the syntax tree).
+    _stray_char: (_) => token(prec(-1, /[{})|*\]]/)),
   },
 });
