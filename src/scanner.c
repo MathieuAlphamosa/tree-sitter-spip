@@ -19,10 +19,10 @@
  *   - If current char starts a top-level SPIP construct → return false
  *   - Otherwise → consume one char, emit CONTENT_CHAR
  *
- * IMPORTANT: Characters like {, }, ), *, | are NOT blocked from content.
- * They only have meaning inside SPIP rules where the parser does not ask
- * for CONTENT_CHAR. Blocking them from content caused infinite loops when
- * they appeared in HTML (CSS, JS, etc.).
+ * IMPORTANT: Only true SPIP construct openers are blocked from content.
+ * Characters like {, }, ), *, | freely pass through as content.
+ * Inside SPIP rules the parser does not request CONTENT_CHAR, so those
+ * characters are matched as literal grammar tokens there.
  */
 
 #include "tree_sitter/parser.h"
@@ -151,32 +151,17 @@ static bool at_spip_start(TSLexer *lexer) {
     case '[':
       return true;
 
-    // These characters are grammar-reserved tokens used inside SPIP rules.
-    // They must be blocked from content so tree-sitter can match them as
-    // literal tokens in balise, loop, criteria, filter rules.
-    // At the top level, the grammar provides a `stray_char` fallback rule
-    // to consume them when they appear in HTML content (CSS, JS, etc.),
-    // preventing infinite loops.
+    // ] stops content: matches conditional_close at top level.
     case ']':
-    case '{':
-    case '}':
-    case ')':
-    case '*':
       return true;
 
-    case '|': {
-      // Block | when followed by a filter name character.
-      // At the top level, `stray_char` will catch it if no filter matches.
-      lexer->mark_end(lexer);
-      lexer->advance(lexer, false);
-      int32_t c2 = lexer->lookahead;
-      if ((c2 >= 'a' && c2 <= 'z') || (c2 >= 'A' && c2 <= 'Z') ||
-          c2 == '_' || c2 == '!' || c2 == '=' || c2 == '<' ||
-          c2 == '>' || c2 == '?' || c2 == '*' || c2 == '{') {
-        return true;
-      }
-      return false;
-    }
+    // NOTE: {, }, ), *, | are NOT blocked here.
+    // They pass through as content characters. Inside SPIP rules
+    // (balise, loop_open, criteria, etc.) the parser does not request
+    // CONTENT_CHAR, so it will see these as literal grammar tokens.
+    // Blocking them here caused infinite loops (no top-level rule
+    // to consume them) AND conflicts with token tables (freeze on
+    // empty files).
 
     default:
       return false;

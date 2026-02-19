@@ -62,10 +62,6 @@
           {
             "type": "SYMBOL",
             "name": "content"
-          },
-          {
-            "type": "SYMBOL",
-            "name": "_stray_char"
           }
         ]
       }
@@ -723,18 +719,6 @@
               "type": "BLANK"
             }
           ]
-        },
-        {
-          "type": "CHOICE",
-          "members": [
-            {
-              "type": "SYMBOL",
-              "name": "balise_params"
-            },
-            {
-              "type": "BLANK"
-            }
-          ]
         }
       ]
     },
@@ -895,17 +879,6 @@
         "content": {
           "type": "SYMBOL",
           "name": "_content_char"
-        }
-      }
-    },
-    "_stray_char": {
-      "type": "TOKEN",
-      "content": {
-        "type": "PREC",
-        "value": -1,
-        "content": {
-          "type": "PATTERN",
-          "value": "[{})|*\\]]"
         }
       }
     }
