@@ -12,7 +12,7 @@
  *
  * When SPIP_WS is valid:
  *   - If current char is whitespace AND followed by a SPIP continuation
- *     token ({, |, ), *, >) → consume whitespace, emit SPIP_WS
+ *     token ({, |, ), *, >, /) → consume whitespace, emit SPIP_WS
  *   - Otherwise fall through to CONTENT_CHAR logic
  *
  * When only CONTENT_CHAR is valid:
@@ -32,27 +32,13 @@ enum TokenType {
   SPIP_WS,
 };
 
-void *tree_sitter_spip_external_scanner_create(void) {
-  return NULL;
+void *tree_sitter_spip_external_scanner_create(void) { return NULL; }
+void tree_sitter_spip_external_scanner_destroy(void *p) { (void)p; }
+unsigned tree_sitter_spip_external_scanner_serialize(void *p, char *b) {
+  (void)p; (void)b; return 0;
 }
-
-void tree_sitter_spip_external_scanner_destroy(void *payload) {
-  (void)payload;
-}
-
-unsigned tree_sitter_spip_external_scanner_serialize(void *payload,
-                                                     char *buffer) {
-  (void)payload;
-  (void)buffer;
-  return 0;
-}
-
-void tree_sitter_spip_external_scanner_deserialize(void *payload,
-                                                   const char *buffer,
-                                                   unsigned length) {
-  (void)payload;
-  (void)buffer;
-  (void)length;
+void tree_sitter_spip_external_scanner_deserialize(void *p, const char *b, unsigned n) {
+  (void)p; (void)b; (void)n;
 }
 
 /**
@@ -66,6 +52,9 @@ static bool is_ws(int32_t c) {
  * Return true if the current position looks like the start of a SPIP
  * construct that the grammar should parse instead of content.
  *
+ * Blocks: (#, #A-Z, [, ], <BOUCLE_, <B_, </BOUCLE_, </B_, <//B_,
+ *         <INCLURE, <multi>, </multi>, <:
+ *
  * IMPORTANT: Only block characters that start *top-level* SPIP constructs.
  * Characters like {, }, ), * only have meaning INSIDE SPIP rules (balise,
  * loop_open, etc.) where the parser won't ask for CONTENT_CHAR anyway.
@@ -76,61 +65,6 @@ static bool at_spip_start(TSLexer *lexer) {
   int32_t c = lexer->lookahead;
 
   switch (c) {
-    case '<': {
-      lexer->mark_end(lexer);
-      lexer->advance(lexer, false);
-      int32_t c2 = lexer->lookahead;
-
-      if (c2 == 'B') {
-        lexer->advance(lexer, false);
-        int32_t c3 = lexer->lookahead;
-        if (c3 == 'O' || c3 == '_') return true;
-        return false;
-      }
-      if (c2 == '/') {
-        lexer->advance(lexer, false);
-        int32_t c3 = lexer->lookahead;
-        if (c3 == 'B') {
-          lexer->advance(lexer, false);
-          int32_t c4 = lexer->lookahead;
-          if (c4 == 'O' || c4 == '_') return true;
-          return false;
-        }
-        if (c3 == '/') {
-          lexer->advance(lexer, false);
-          if (lexer->lookahead == 'B') return true;
-          return false;
-        }
-        if (c3 == 'm') {
-          lexer->advance(lexer, false);
-          if (lexer->lookahead == 'u') {
-            lexer->advance(lexer, false);
-            if (lexer->lookahead == 'l') {
-              lexer->advance(lexer, false);
-              if (lexer->lookahead == 't') {
-                lexer->advance(lexer, false);
-                if (lexer->lookahead == 'i') return true;
-              }
-            }
-          }
-          return false;
-        }
-        return false;
-      }
-      if (c2 == 'I') {
-        lexer->advance(lexer, false);
-        if (lexer->lookahead == 'N') return true;
-        return false;
-      }
-      if (c2 == 'm') {
-        lexer->advance(lexer, false);
-        if (lexer->lookahead == 'u') return true;
-        return false;
-      }
-      if (c2 == ':') return true;
-      return false;
-    }
-
     case '(': {
       lexer->mark_end(lexer);
       lexer->advance(lexer, false);
@@ -143,6 +77,50 @@ static bool at_spip_start(TSLexer *lexer) {
       lexer->advance(lexer, false);
       int32_t c2 = lexer->lookahead;
       if (c2 >= 'A' && c2 <= 'Z') return true;
+      return false;
+    }
+
+    case '<': {
+      lexer->mark_end(lexer);
+      lexer->advance(lexer, false);  // consume '<'
+
+      // <BOUCLE_ or <B_
+      if (lexer->lookahead == 'B') return true;
+
+      // <INCLURE
+      if (lexer->lookahead == 'I') {
+        lexer->advance(lexer, false);
+        if (lexer->lookahead == 'N') return true;
+        return false;
+      }
+
+      // <multi>
+      if (lexer->lookahead == 'm') {
+        lexer->advance(lexer, false);
+        if (lexer->lookahead == 'u') return true;
+        return false;
+      }
+
+      // <:translation:>
+      if (lexer->lookahead == ':') return true;
+
+      // </BOUCLE_, </B_, </multi>
+      if (lexer->lookahead == '/') {
+        lexer->advance(lexer, false);  // consume '/'
+        if (lexer->lookahead == 'B') return true;   // </BOUCLE_ or </B_
+        if (lexer->lookahead == 'm') {
+          lexer->advance(lexer, false);
+          if (lexer->lookahead == 'u') return true;  // </multi>
+          return false;
+        }
+        // <//B_
+        if (lexer->lookahead == '/') {
+          lexer->advance(lexer, false);
+          if (lexer->lookahead == 'B') return true;
+        }
+        return false;
+      }
+
       return false;
     }
 
@@ -172,9 +150,7 @@ bool tree_sitter_spip_external_scanner_scan(void *payload, TSLexer *lexer,
                                             const bool *valid_symbols) {
   (void)payload;
 
-  if (lexer->eof(lexer)) {
-    return false;
-  }
+  if (lexer->eof(lexer)) return false;
 
   // ── SPIP_WS: whitespace inside SPIP constructs ──
   // The parser requests SPIP_WS when it's inside a loop_open, balise,
@@ -188,47 +164,38 @@ bool tree_sitter_spip_external_scanner_scan(void *payload, TSLexer *lexer,
       lexer->advance(lexer, false);
     }
 
-    // Check what follows
+    // Check what follows — if it's a SPIP continuation token, emit SPIP_WS
     int32_t next = lexer->lookahead;
     bool followed_by_spip = false;
 
     switch (next) {
-      case '{':
-      case '|':
-      case ')':
-      case '*':
-      case '>':
+      case '{':   // next criteria or params
+      case '|':   // next filter
+      case ')':   // closing balise
+      case '*':   // star modifier
+      case '>':   // closing loop_open
+      case '/':   // closing /> for include_tag
         followed_by_spip = true;
         break;
       default:
-        // Check for SPIP construct starts too (e.g. #TAG after whitespace)
-        followed_by_spip = at_spip_start(lexer);
         break;
     }
 
     if (followed_by_spip) {
-      // Emit the whitespace as SPIP_WS
       lexer->mark_end(lexer);
       lexer->result_symbol = SPIP_WS;
       return true;
     }
 
-    // Whitespace not followed by SPIP token.
-    // Return false — the parser will try other alternatives.
-    // Tree-sitter will retry at the original position.
+    // Not followed by SPIP token — return false, tree-sitter retries
     return false;
   }
 
   // ── CONTENT_CHAR: one character of non-SPIP content ──
-  if (!valid_symbols[CONTENT_CHAR]) {
-    return false;
-  }
+  if (!valid_symbols[CONTENT_CHAR]) return false;
+  if (at_spip_start(lexer)) return false;
 
-  if (at_spip_start(lexer)) {
-    return false;
-  }
-
-  // Not a SPIP construct — consume one character as content
+  // Consume one character as content
   lexer->mark_end(lexer);
   lexer->advance(lexer, false);
   lexer->mark_end(lexer);

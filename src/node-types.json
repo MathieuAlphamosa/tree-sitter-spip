@@ -40,11 +40,6 @@
     }
   },
   {
-    "type": "balise_name",
-    "named": true,
-    "fields": {}
-  },
-  {
     "type": "balise_params",
     "named": true,
     "fields": {
@@ -74,16 +69,6 @@
           }
         ]
       }
-    },
-    "children": {
-      "multiple": false,
-      "required": false,
-      "types": [
-        {
-          "type": "balise_params",
-          "named": true
-        }
-      ]
     }
   },
   {
@@ -301,11 +286,6 @@
     }
   },
   {
-    "type": "loop_type",
-    "named": true,
-    "fields": {}
-  },
-  {
     "type": "multi_block",
     "named": true,
     "fields": {},
@@ -423,6 +403,10 @@
     "named": false
   },
   {
+    "type": "/>",
+    "named": false
+  },
+  {
     "type": ":>",
     "named": false
   },
@@ -475,6 +459,10 @@
     "named": false
   },
   {
+    "type": "balise_name",
+    "named": true
+  },
+  {
     "type": "balise_namespace",
     "named": true
   },
@@ -496,6 +484,10 @@
   },
   {
     "type": "loop_name",
+    "named": true
+  },
+  {
+    "type": "loop_type",
     "named": true
   },
   {

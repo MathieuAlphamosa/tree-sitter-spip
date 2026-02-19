@@ -8,21 +8,10 @@
  * This grammar recognises only the SPIP constructs and treats everything
  * else as `content` nodes.  HTML is then injected into those content
  * nodes via injections.scm in the Zed extension.
- */
-
-/**
- * Helper: nested braces content up to N levels deep.
- * Used for criteria values, include params, and balise/filter params.
  *
- * SPIP constructs can have deeply nested braces like:
- *   {#ENV{nombre_liens_max,#CONST{_PAGINATION_NOMBRE_LIENS_MAX}}|max{3}}
+ * IMPORTANT: All regex patterns use + (not *) to prevent empty-string
+ * matches, which cause infinite loops in tree-sitter WASM.
  */
-function nestedBraces(depth) {
-  if (depth <= 0) {
-    return /[^}]*/;
-  }
-  return repeat(choice(/[^{}]+/, seq("{", nestedBraces(depth - 1), "}")));
-}
 
 module.exports = grammar({
   name: "spip",
@@ -58,12 +47,7 @@ module.exports = grammar({
     // ── Comments ──────────────────────────────────────────────
     // [(#REM) some comment text ]
     // Can span multiple lines: [(#REM)\n  multi-line comment\n]
-    comment: (_) =>
-      seq(
-        "[(#REM)",
-        /[^\]]*/,
-        "]",
-      ),
+    comment: (_) => seq("[(#REM)", optional(/[^\]]+/), "]"),
 
     // ── Loops (Boucles) ──────────────────────────────────────
     // <BOUCLE_name(TYPE){criteria}{sort}>
@@ -87,56 +71,46 @@ module.exports = grammar({
 
     // </BOUCLE_name>
     loop_close: ($) =>
-      seq(
-        "</BOUCLE_",
-        field("name", $.loop_name),
-        ">",
-      ),
+      seq("</BOUCLE_", field("name", $.loop_name), ">"),
 
     // <B_name>
     loop_conditional_open: ($) =>
-      seq(
-        "<B_",
-        field("name", $.loop_name),
-        ">",
-      ),
+      seq("<B_", field("name", $.loop_name), ">"),
 
     // </B_name>
     loop_conditional_close: ($) =>
-      seq(
-        "</B_",
-        field("name", $.loop_name),
-        ">",
-      ),
+      seq("</B_", field("name", $.loop_name), ">"),
 
     // <//B_name>
     loop_alternative: ($) =>
-      seq(
-        "<//B_",
-        field("name", $.loop_name),
-        ">",
-      ),
+      seq("<//B_", field("name", $.loop_name), ">"),
 
     // Loop names can start with digits: <BOUCLE_10recents(...)>
     loop_name: (_) => /[a-zA-Z0-9_]+/,
-    loop_type: (_) => /[A-Z][A-Z0-9_]*/,
+    // Type can be uppercase (ARTICLES) or a parent loop ref (BOUCLE_rubriques)
+    loop_type: (_) => /[A-Z][A-Za-z0-9_]*/,
 
     // {criteria_content}  — supports nested braces like {si #ENV{x}}
     criteria: ($) =>
-      seq(
-        "{",
-        field("value", $.criteria_value),
-        "}",
-      ),
+      seq("{", field("value", $.criteria_value), "}"),
 
     // Criteria value: everything inside { }, with support for nested
     // braces up to 3 levels deep.
-    criteria_value: (_) => repeat1(
-      choice(
+    criteria_value: ($) =>
+      repeat1(choice(
         /[^{}]+/,
-        seq("{", nestedBraces(2), "}"),
-      ),
-    ),
+        seq("{", optional($._nested_brace_content), "}"),
+      )),
+
+    // Nested brace content — supports 2+ levels deep.
+    // Uses repeat1 and /[^{}]+/ (with +) to never match empty string.
+    _nested_brace_content: ($) =>
+      repeat1(choice(
+        /[^{}]+/,
+        seq("{", optional($._deep_brace_content), "}"),
+      )),
+
+    _deep_brace_content: (_) => /[^{}]+/,
 
     // ── Include ──────────────────────────────────────────────
     // <INCLURE{fond=header}{env}{home=oui} />
@@ -146,23 +120,19 @@ module.exports = grammar({
       seq(
         "<INCLURE",
         repeat1(seq(optional($._spip_ws), $.include_param_block)),
-        /\s*\/>/,
+        optional($._spip_ws),
+        "/>",
       ),
 
     include_param_block: ($) =>
-      seq(
-        "{",
-        field("params", $.include_params),
-        "}",
-      ),
+      seq("{", field("params", $.include_params), "}"),
 
     // Include params: supports nested braces up to 3 levels deep.
-    include_params: (_) => repeat1(
-      choice(
+    include_params: ($) =>
+      repeat1(choice(
         /[^{}]+/,
-        seq("{", nestedBraces(2), "}"),
-      ),
-    ),
+        seq("{", optional($._nested_brace_content), "}"),
+      )),
 
     // ── Multilingual ─────────────────────────────────────────
     // Two forms:
@@ -186,7 +156,7 @@ module.exports = grammar({
     // Match any text inside <multi> except delimiters [xx], {xx} and </multi>
     // We allow < when not followed by / (which would be </multi>)
     // and </ when not followed by m (which avoids </multi>)
-    multi_text: (_) => /([^\[{<]|<[^\/\[{]|<\/[^m])+/,
+    multi_text: (_) => /([^\[{<]|<[^\/\[{<]|<\/[^m])+/,
 
     // ── Translation strings ──────────────────────────────────
     // <:module:string:> or <:string:> or <:string|filter:>
@@ -220,11 +190,7 @@ module.exports = grammar({
     balise_name: (_) => /[A-Z][A-Z0-9_]*/,
 
     balise_params: ($) =>
-      seq(
-        "{",
-        field("value", optional($.param_content)),
-        "}",
-      ),
+      seq("{", field("value", optional($.param_content)), "}"),
 
     // #TAG_NAME or #TAG_NAME* or #TAG_NAME**
     // Note: shorthand balises do NOT support {params} because { is a
@@ -252,23 +218,18 @@ module.exports = grammar({
     filter_name: (_) => /[a-zA-Z_!=<>?*][a-zA-Z0-9_!=<>?*]*/,
 
     filter_params: ($) =>
-      seq(
-        "{",
-        field("value", optional($.param_content)),
-        "}",
-      ),
+      seq("{", field("value", optional($.param_content)), "}"),
 
     // Shared rule for parameter content inside { }
     // Handles nested braces up to 3 levels deep for expressions like:
     //   {#ARRAY{a,b}}
     //   {#LISTE{300,360,400}}
     //   {#ENV{nombre_liens_max,#CONST{_PAGINATION_NOMBRE_LIENS_MAX}}}
-    param_content: (_) => repeat1(
-      choice(
+    param_content: ($) =>
+      repeat1(choice(
         /[^{}]+/,
-        seq("{", nestedBraces(2), "}"),
-      ),
-    ),
+        seq("{", optional($._nested_brace_content), "}"),
+      )),
 
     // ── Conditional brackets ─────────────────────────────────
     // [ ... ] around balises for conditional display
@@ -279,6 +240,5 @@ module.exports = grammar({
     // The external scanner emits _content_char for characters that
     // are not part of any SPIP construct.
     content: ($) => prec.right(repeat1($._content_char)),
-
   },
 });
