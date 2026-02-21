@@ -96,6 +96,32 @@ Shorthand balise with numeric namespace
     name: (balise_name)))
 
 ================================================================================
+Shorthand balise with params
+================================================================================
+#CHEMIN{toto.jpg}
+--------------------------------------------------------------------------------
+
+(template
+  (balise_shorthand
+    name: (balise_name)
+    (shorthand_params
+      (shorthand_lbrace)
+      value: (param_content))))
+
+================================================================================
+Shorthand balise with multiple params
+================================================================================
+#SET{ma_variable, valeur}
+--------------------------------------------------------------------------------
+
+(template
+  (balise_shorthand
+    name: (balise_name)
+    (shorthand_params
+      (shorthand_lbrace)
+      value: (param_content))))
+
+================================================================================
 Balise with params
 ================================================================================
 (#SET{name, value})

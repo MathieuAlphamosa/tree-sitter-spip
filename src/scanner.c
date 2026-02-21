@@ -1,9 +1,10 @@
 /**
  * External scanner for tree-sitter-spip.
  *
- * Two external tokens:
- *   CONTENT_CHAR — one character of HTML/text content (not SPIP)
- *   SPIP_WS     — whitespace inside SPIP constructs (between criteria, etc.)
+ * Three external tokens:
+ *   CONTENT_CHAR      — one character of HTML/text content (not SPIP)
+ *   SPIP_WS           — whitespace inside SPIP constructs (between criteria, etc.)
+ *   SHORTHAND_LBRACE  — '{' when expected after a shorthand balise
  */
 
 #include "tree_sitter/parser.h"
@@ -11,6 +12,7 @@
 enum TokenType {
   CONTENT_CHAR,
   SPIP_WS,
+  SHORTHAND_LBRACE,
 };
 
 void *tree_sitter_spip_external_scanner_create(void) { return NULL; }
@@ -103,6 +105,18 @@ bool tree_sitter_spip_external_scanner_scan(void *payload, TSLexer *lexer,
   (void)payload;
 
   if (lexer->eof(lexer)) return false;
+
+  // ── SHORTHAND_LBRACE: '{' after a shorthand balise ──
+  // The parser sets valid_symbols[SHORTHAND_LBRACE] = true only when
+  // it expects params after a shorthand balise (#TAG).
+  // This allows { to be consumed as a parameter opener instead of content.
+  if (valid_symbols[SHORTHAND_LBRACE] && lexer->lookahead == '{') {
+    lexer->mark_end(lexer);
+    lexer->advance(lexer, false);
+    lexer->mark_end(lexer);
+    lexer->result_symbol = SHORTHAND_LBRACE;
+    return true;
+  }
 
   // ── SPIP_WS: whitespace inside SPIP constructs ──
   if (valid_symbols[SPIP_WS] && is_ws(lexer->lookahead)) {

@@ -23,3 +23,21 @@ Mixed HTML and SPIP
   (balise_shorthand
     name: (balise_name))
   (content))
+
+================================================================================
+Shorthand params in HTML context
+================================================================================
+<img src="#CHEMIN{image.jpg}" alt="#TITRE">
+--------------------------------------------------------------------------------
+
+(template
+  (content)
+  (balise_shorthand
+    name: (balise_name)
+    (shorthand_params
+      (shorthand_lbrace)
+      value: (param_content)))
+  (content)
+  (balise_shorthand
+    name: (balise_name))
+  (content))

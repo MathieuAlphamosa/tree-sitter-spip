@@ -19,6 +19,7 @@ module.exports = grammar({
   externals: ($) => [
     $._content_char,
     $._spip_ws,
+    $.shorthand_lbrace,
   ],
 
   extras: (_) => [],
@@ -191,17 +192,20 @@ module.exports = grammar({
     balise_params: ($) =>
       seq("{", field("value", optional($.param_content)), "}"),
 
-    // #TAG_NAME or #TAG_NAME* or #TAG_NAME**
-    // Shorthand balises do NOT parse {params} — use (#TAG{param}) for that.
-    // This is because { cannot be reliably blocked from content only after
-    // a shorthand (it would break CSS/JS where { is common).
+    // #TAG_NAME, #TAG_NAME{param}, #TAG_NAME* or #TAG_NAME**
+    // Uses external _shorthand_lbrace token so the scanner only blocks {
+    // when the parser expects params after a shorthand balise.
     balise_shorthand: ($) =>
       seq(
         "#",
         optional(field("namespace", $.balise_namespace)),
         field("name", $.balise_name),
         optional(/\*{1,2}/),
+        repeat($.shorthand_params),
       ),
+
+    shorthand_params: ($) =>
+      seq($.shorthand_lbrace, field("value", optional($.param_content)), "}"),
 
     // ── Filters ──────────────────────────────────────────────
     // |filter_name or |filter_name{param}
