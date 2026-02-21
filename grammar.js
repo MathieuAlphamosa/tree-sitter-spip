@@ -185,7 +185,7 @@ module.exports = grammar({
         ")",
       ),
 
-    balise_namespace: (_) => /_[a-zA-Z]+:/,
+    balise_namespace: (_) => /_[a-zA-Z0-9_]+:/,
     balise_name: (_) => /[A-Z][A-Z0-9_]*/,
 
     balise_params: ($) =>
@@ -198,6 +198,7 @@ module.exports = grammar({
     balise_shorthand: ($) =>
       seq(
         "#",
+        optional(field("namespace", $.balise_namespace)),
         field("name", $.balise_name),
         optional(/\*{1,2}/),
       ),

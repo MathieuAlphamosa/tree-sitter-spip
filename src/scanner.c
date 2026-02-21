@@ -45,6 +45,7 @@ static bool at_spip_start(TSLexer *lexer) {
       lexer->advance(lexer, false);
       int32_t c2 = lexer->lookahead;
       if (c2 >= 'A' && c2 <= 'Z') return true;
+      if (c2 == '_') return true;  // #_loopname:TAG shorthand
       return false;
     }
 
