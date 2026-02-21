@@ -3,26 +3,7 @@
  *
  * Two external tokens:
  *   CONTENT_CHAR — one character of HTML/text content (not SPIP)
- *   SPIP_WS     — whitespace between SPIP sub-tokens (criteria, filters, etc.)
- *
- * The key insight: the grammar declares `$._spip_ws` in positions where
- * whitespace is expected *inside* SPIP constructs (between criteria, between
- * filters, before closing `>`).  The scanner checks `valid_symbols[SPIP_WS]`
- * to know when the parser is *inside* a SPIP construct and expects whitespace.
- *
- * When SPIP_WS is valid:
- *   - If current char is whitespace AND followed by a SPIP continuation
- *     token ({, |, ), *, >, /) → consume whitespace, emit SPIP_WS
- *   - Otherwise fall through to CONTENT_CHAR logic
- *
- * When only CONTENT_CHAR is valid:
- *   - If current char starts a top-level SPIP construct → return false
- *   - Otherwise → consume one char, emit CONTENT_CHAR
- *
- * IMPORTANT: Only true SPIP construct openers are blocked from content.
- * Characters like {, }, ), *, | freely pass through as content.
- * Inside SPIP rules the parser does not request CONTENT_CHAR, so those
- * characters are matched as literal grammar tokens there.
+ *   SPIP_WS     — whitespace inside SPIP constructs (between criteria, etc.)
  */
 
 #include "tree_sitter/parser.h"
@@ -41,25 +22,12 @@ void tree_sitter_spip_external_scanner_deserialize(void *p, const char *b, unsig
   (void)p; (void)b; (void)n;
 }
 
-/**
- * Check if a character is whitespace.
- */
 static bool is_ws(int32_t c) {
   return c == ' ' || c == '\t' || c == '\n' || c == '\r';
 }
 
 /**
- * Return true if the current position looks like the start of a SPIP
- * construct that the grammar should parse instead of content.
- *
- * Blocks: (#, #A-Z, [, ], <BOUCLE_, <B_, </BOUCLE_, </B_, <//B_,
- *         <INCLURE, <multi>, </multi>, <:
- *
- * IMPORTANT: Only block characters that start *top-level* SPIP constructs.
- * Characters like {, }, ), * only have meaning INSIDE SPIP rules (balise,
- * loop_open, etc.) where the parser won't ask for CONTENT_CHAR anyway.
- * Blocking them here would cause infinite loops when they appear in HTML
- * (CSS, JS, plain text), because no top-level grammar rule can consume them.
+ * Check if current position starts a SPIP construct.
  */
 static bool at_spip_start(TSLexer *lexer) {
   int32_t c = lexer->lookahead;
@@ -82,38 +50,32 @@ static bool at_spip_start(TSLexer *lexer) {
 
     case '<': {
       lexer->mark_end(lexer);
-      lexer->advance(lexer, false);  // consume '<'
+      lexer->advance(lexer, false);
 
-      // <BOUCLE_ or <B_
       if (lexer->lookahead == 'B') return true;
 
-      // <INCLURE
       if (lexer->lookahead == 'I') {
         lexer->advance(lexer, false);
         if (lexer->lookahead == 'N') return true;
         return false;
       }
 
-      // <multi>
       if (lexer->lookahead == 'm') {
         lexer->advance(lexer, false);
         if (lexer->lookahead == 'u') return true;
         return false;
       }
 
-      // <:translation:>
       if (lexer->lookahead == ':') return true;
 
-      // </BOUCLE_, </B_, </multi>
       if (lexer->lookahead == '/') {
-        lexer->advance(lexer, false);  // consume '/'
-        if (lexer->lookahead == 'B') return true;   // </BOUCLE_ or </B_
+        lexer->advance(lexer, false);
+        if (lexer->lookahead == 'B') return true;
         if (lexer->lookahead == 'm') {
           lexer->advance(lexer, false);
-          if (lexer->lookahead == 'u') return true;  // </multi>
+          if (lexer->lookahead == 'u') return true;
           return false;
         }
-        // <//B_
         if (lexer->lookahead == '/') {
           lexer->advance(lexer, false);
           if (lexer->lookahead == 'B') return true;
@@ -124,22 +86,11 @@ static bool at_spip_start(TSLexer *lexer) {
       return false;
     }
 
-    // [ always stops content: it's either a comment start [(#REM)
-    // or a conditional bracket (both are top-level grammar rules).
     case '[':
       return true;
 
-    // ] stops content: matches conditional_close at top level.
     case ']':
       return true;
-
-    // NOTE: {, }, ), *, | are NOT blocked here.
-    // They pass through as content characters. Inside SPIP rules
-    // (balise, loop_open, criteria, etc.) the parser does not request
-    // CONTENT_CHAR, so it will see these as literal grammar tokens.
-    // Blocking them here caused infinite loops (no top-level rule
-    // to consume them) AND conflicts with token tables (freeze on
-    // empty files).
 
     default:
       return false;
@@ -153,28 +104,23 @@ bool tree_sitter_spip_external_scanner_scan(void *payload, TSLexer *lexer,
   if (lexer->eof(lexer)) return false;
 
   // ── SPIP_WS: whitespace inside SPIP constructs ──
-  // The parser requests SPIP_WS when it's inside a loop_open, balise,
-  // include_tag, etc. and expects optional whitespace before the next
-  // sub-token ({criteria}, |filter, >, etc.).
   if (valid_symbols[SPIP_WS] && is_ws(lexer->lookahead)) {
     lexer->mark_end(lexer);
 
-    // Consume all contiguous whitespace
     while (is_ws(lexer->lookahead) && !lexer->eof(lexer)) {
       lexer->advance(lexer, false);
     }
 
-    // Check what follows — if it's a SPIP continuation token, emit SPIP_WS
     int32_t next = lexer->lookahead;
     bool followed_by_spip = false;
 
     switch (next) {
-      case '{':   // next criteria or params
-      case '|':   // next filter
-      case ')':   // closing balise
-      case '*':   // star modifier
-      case '>':   // closing loop_open
-      case '/':   // closing /> for include_tag
+      case '{':
+      case '|':
+      case ')':
+      case '*':
+      case '>':
+      case '/':
         followed_by_spip = true;
         break;
       default:
@@ -187,7 +133,6 @@ bool tree_sitter_spip_external_scanner_scan(void *payload, TSLexer *lexer,
       return true;
     }
 
-    // Not followed by SPIP token — return false, tree-sitter retries
     return false;
   }
 

@@ -193,9 +193,9 @@ module.exports = grammar({
       seq("{", field("value", optional($.param_content)), "}"),
 
     // #TAG_NAME or #TAG_NAME* or #TAG_NAME**
-    // Note: shorthand balises do NOT support {params} because { is a
-    // common HTML/CSS character that must flow through as content.
-    // Use the parenthesized form (#TAG{param}) for params.
+    // Shorthand balises do NOT parse {params} — use (#TAG{param}) for that.
+    // This is because { cannot be reliably blocked from content only after
+    // a shorthand (it would break CSS/JS where { is common).
     balise_shorthand: ($) =>
       seq(
         "#",
