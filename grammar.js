@@ -114,14 +114,13 @@ module.exports = grammar({
 
     // ── Include ──────────────────────────────────────────────
     // <INCLURE{fond=header}{env}{home=oui} />
-    // Multiple param blocks are common:
-    //   <INCLURE{fond=inclure/head}{home=oui} />
+    // Also supports legacy syntax: <INCLURE{fond=header}>
     include_tag: ($) =>
       seq(
         "<INCLURE",
         repeat1(seq(optional($._spip_ws), $.include_param_block)),
         optional($._spip_ws),
-        "/>",
+        choice("/>", ">"),
       ),
 
     include_param_block: ($) =>

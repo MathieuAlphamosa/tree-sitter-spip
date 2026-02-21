@@ -47,3 +47,14 @@ Include with nested braces in params
       params: (include_params))
     (include_param_block
       params: (include_params))))
+
+================================================================================
+Include with legacy syntax (> instead of />)
+================================================================================
+<INCLURE{fond=inclure/article-mini}>
+--------------------------------------------------------------------------------
+
+(template
+  (include_tag
+    (include_param_block
+      params: (include_params))))
