@@ -43,6 +43,32 @@ Loop with multiple criteria
     name: (loop_name)))
 
 ================================================================================
+Loop with lowercase SQL table type
+================================================================================
+<BOUCLE_principale(spip_tests)></BOUCLE_principale>
+--------------------------------------------------------------------------------
+
+(template
+  (loop_open
+    name: (loop_name)
+    type: (loop_type))
+  (loop_close
+    name: (loop_name)))
+
+================================================================================
+Loop with multiple space-separated types
+================================================================================
+<BOUCLE_principale(ARTICLES spip_tests)></BOUCLE_principale>
+--------------------------------------------------------------------------------
+
+(template
+  (loop_open
+    name: (loop_name)
+    type: (loop_type))
+  (loop_close
+    name: (loop_name)))
+
+================================================================================
 Complete loop with conditionals
 ================================================================================
 <B_art>

@@ -88,8 +88,9 @@ module.exports = grammar({
 
     // Loop names can start with digits: <BOUCLE_10recents(...)>
     loop_name: (_) => /[a-zA-Z0-9_]+/,
-    // Type can be uppercase (ARTICLES) or a parent loop ref (BOUCLE_rubriques)
-    loop_type: (_) => /[A-Z][A-Za-z0-9_]*/,
+    // Type can be uppercase (ARTICLES), lowercase SQL table (spip_tests),
+    // or multiple space-separated values (ARTICLES spip_tests)
+    loop_type: (_) => /[a-zA-Z_][a-zA-Z0-9_ ]*/,
 
     // {criteria_content}  — supports nested braces like {si #ENV{x}}
     criteria: ($) =>
